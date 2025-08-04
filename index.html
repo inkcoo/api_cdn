@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>免费CDN文件上传</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>点鸭社区CDN上传</h1>
+
+        <div class="upload-area" id="dropZone">
+            <p>拖拽文件到此处或点击选择文件</p>
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" class="file-input" multiple />
+                <label for="fileInput" class="file-input-label">选择文件</label>
+                <div class="file-name" id="fileNameDisplay"></div>
+            </div>
+
+            <div class="info-box">
+                <strong>📁 文件类型说明：</strong><br>
+                <span>💡 <strong>前端直传模式</strong>：支持所有文件类型，仅受点鸭社区CDN限制</span><br>
+                <span>⚠️ 建议上传小于20MB的文件，大文件可能上传失败！</span>
+            </div>
+
+            <button class="btn" id="uploadBtn" disabled>上传文件</button>
+            <button class="btn btn-secondary" id="plainLinkBtn" style="display:none;">纯文本链接</button>
+
+            <div class="progress-bar" id="progressDiv"></div>
+        </div>
+
+        <div id="result" class="result" style="display: none;"></div>
+
+        <div class="disclaimer">
+            <h3>免责声明</h3>
+            <p>1. 本服务仅供学习和测试使用，请勿上传违法、侵权或敏感内容。</p>
+            <p>2. 文件由第三方<a href="https://shequ.pgaot.com/?mod=codemaocdn" target="_blank">编程猫点鸭社区CDN</a>存储，本站不保证永久可用性。
+            </p>
+            <p>3. 请勿上传涉及隐私、商业机密或其他受法律保护的内容，本站没有能力删除任何上传的文件。</p>
+            <p>4. 本站默认开启URL记录，所有上传链接将被记录保留。</p>
+            <p>5. 使用本服务即表示您同意承担所有相关责任。</p>
+            <p>6. 本站不提供任何技术支持，如有问题，请自行解决。</p>
+            <p>7. 本站的API代码在<a href="https://github.com/inkcoo/pgaotcdn_api" target="_blank"><img src="https://img.shields.io/github/stars/inkcoo/pgaotcdn_api.svg?style=social&label=Star&maxAge=2592000" alt="GitHub stars"></a>上开源。</p>
+             <p>本页面可在Cloudflare Workers或Cloudflare Pages上托管运行，项目开源地址<a href="https://github.com/inkcoo/pgaotcdn_api.github.io" target="_blank"><img src="https://img.shields.io/github/stars/inkcoo/pgaotcdn_api.github.io.svg?style=social&label=Star&maxAge=2592000" alt="GitHub stars"></a><p>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const resultDiv = document.getElementById('result');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const plainLinkBtn = document.getElementById('plainLinkBtn');
+        const uploadMode = document.getElementById('uploadMode');
+        const progressDiv = document.getElementById('progressDiv');
+        let lastCDNLinks = [];
+
+        // 文件选择事件
+        fileInput.addEventListener('change', function () {
+            if (this.files.length > 0) {
+                updateFileDisplay(this.files);
+                uploadBtn.disabled = false;
+            } else {
+                fileNameDisplay.textContent = '';
+                uploadBtn.disabled = true;
+            }
+        });
+
+        // 更新文件显示
+        function updateFileDisplay(files) {
+            let fileNames = '';
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                fileNames += `${file.name}\n`;
+            }
+            
+            fileNameDisplay.textContent = `已选择 ${files.length} 个文件:\n${fileNames}`;
+        }
+
+        // 拖拽事件
+        dropZone.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', function () {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateFileDisplay(files);
+                uploadBtn.disabled = false;
+            }
+        });
+
+        // 点击上传区域选择文件
+        dropZone.addEventListener('click', function (e) {
+            if (e.target !== uploadBtn && e.target !== plainLinkBtn && e.target !== fileInput && e.target !== fileNameDisplay) {
+                fileInput.click();
+            }
+        });
+
+        // 阻止文件输入框点击事件冒泡
+        fileInput.addEventListener('click', function (e) {
+            e.stopPropagation();
+        });
+
+        // 上传按钮事件
+        uploadBtn.addEventListener('click', async function () {
+            if (fileInput.files.length === 0) {
+                showMessage('请先选择文件', 'error');
+                return;
+            }
+
+            const files = fileInput.files;
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files[]', files[i]);
+            }
+            formData.append('mode', 'direct');
+
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '上传中...';
+            plainLinkBtn.style.display = 'none';
+            progressDiv.style.display = 'block';
+            progressDiv.textContent = '🔄 正在前端直传...';
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // 检查响应状态码
+                if (response.status === 405) {
+                    showMessage(`❌ 上传出错: HTTP ${response.status} (方法不允许)<br>请检查API路径配置，确保使用正确的端点。<br>当前路径: /api/upload`, 'error');
+                    return;
+                }
+
+                let data = null;
+                let text = await response.text();
+                
+                // 检查响应内容是否为空
+                if (!text) {
+                    showMessage(`❌ 上传出错: 服务器返回空响应<br>HTTP状态码：${response.status}<br>请稍后重试或联系管理员。`, 'error');
+                    return;
+                }
+
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    showMessage(`❌ 上传出错: 服务器返回非JSON数据<br>HTTP状态码：${response.status}<br>响应内容：${text.substring(0, 500)}${text.length > 500 ? '... (内容已截断)' : ''}`, 'error');
+                    return;
+                }
+
+                if (response.ok && data.success) {
+                    progressDiv.textContent = '✅ 上传完成';
+
+                    // 保存链接信息
+                    if (data.results && data.results.length > 0) {
+                        lastCDNLinks = data.results.map(result => result.url).filter(url => url);
+                    } else if (data.url) {
+                        lastCDNLinks = [data.url];
+                    }
+
+                    // 显示结果
+                    let resultHtml = '<div style="margin-bottom:15px;font-weight:600;">🎉 上传成功！</div>';
+                    
+                    if (data.results && data.results.length > 0) {
+                        // 多文件上传结果 - 优化显示方式
+                        // 显示文件名和状态
+                        for (const result of data.results) {
+                            if (result.success && result.url) {
+                                resultHtml += `<div style='color: rgb(10 39 110 / 90%);font-size:0.9rem;margin-bottom:5px;margin-top:10px;'>📄 ${result.filename}</div>`;
+                            } else {
+                                resultHtml += `<div style='color:#ef4444;font-size:0.9rem;margin-bottom:5px;margin-top:10px;'>❌ ${result.filename}: 上传失败</div>`;
+                            }
+                        }
+                        
+                        // 显示所有链接在文本区域中，确保每个链接都在单独的一行
+                    const allUrls = data.results.filter(r => r.success && r.url).map(r => r.url).join('\n');
+                        if (allUrls) {
+                            resultHtml += `
+                                <textarea class="url-input" readonly style="height:120px;white-space:pre;" onclick="this.select();navigator.clipboard.writeText(this.value);this.style.background='rgba(74,222,128,0.2)';setTimeout(()=>this.style.background='rgba(255,255,255,0.1)',1000);">${allUrls}</textarea>
+                                <div style='color:rgba(255,255,255,0.7);font-size:0.85rem;margin-top:8px;'>点击文本区域可复制所有链接</div>
+                            `;
+                        }
+                    } else if (data.url) {
+                        // 单文件上传结果
+                        resultHtml += `
+                            <input type="text" id="cdnUrlBox" class="url-input" value="${data.url}" readonly onclick="this.select();navigator.clipboard.writeText(this.value);this.style.background='rgba(74,222,128,0.2)';setTimeout(()=>this.style.background='rgba(255,255,255,0.1)',1000);">
+                            <div style='color:rgba(255,255,255,0.7);font-size:0.85rem;margin-top:8px;'>点击输入框可复制链接</div>
+                        `;
+                    }
+
+                    showMessage(resultHtml, 'success', true);
+                    plainLinkBtn.style.display = 'inline-block';
+                } else {
+                    progressDiv.style.display = 'none';
+                    showMessage(`❌ 上传失败: ${data.message || '未知错误'}`, 'error');
+                }
+            } catch (error) {
+                progressDiv.style.display = 'none';
+                showMessage(`❌ 上传出错: ${error.message}`, 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '上传文件';
+            }
+        });
+
+        // 纯文本链接按钮
+        plainLinkBtn.addEventListener('click', function () {
+            if (lastCDNLinks.length > 0) {
+                if (lastCDNLinks.length === 1) {
+                    // 单个文件，直接打开
+                    window.open('/api/link?link=' + encodeURIComponent(lastCDNLinks[0]), '_blank');
+                } else {
+                    // 多个文件，使用新的多链接接口
+                    const linksParam = lastCDNLinks.map(link => encodeURIComponent(link)).join(',');
+                    window.open('/api/link?links=' + linksParam, '_blank');
+                }
+            }
+        });
+
+        // 显示消息
+        function showMessage(message, type, fixed = false) {
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+            if (!fixed) {
+                setTimeout(() => resultDiv.style.display = 'none', 5000);
+            }
+        }
+    </script>
+</body>
+
+</html>

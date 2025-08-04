@@ -1,0 +1,15 @@
+{
+  "name": "pgaotcdn_cf_pages",
+  "version": "1.0.0",
+  "description": "A file upload service for Cloudflare Pages",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve",
+    "build": "echo 'No build step required for Cloudflare Pages'",
+    "deploy": "echo 'Deploy to Cloudflare Pages using dashboard or GitHub integration'"
+  },
+  "dependencies": {
+    "hono": "^3.0.0"
+  },
+  "devDependencies": {}
+}
