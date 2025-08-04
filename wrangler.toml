@@ -1,0 +1,11 @@
+name = "cfcdn"
+compatibility_date = "2023-12-01"
+main = "src/index.ts"
+
+# 静态资源配置
+[site]
+bucket = "./"
+
+# 环境配置
+[env.production]
+name = "cfcdn"
