@@ -211,11 +211,11 @@
             if (lastCDNLinks.length > 0) {
                 if (lastCDNLinks.length === 1) {
                     // 单个文件，直接打开
-                    window.open('/link?link=' + encodeURIComponent(lastCDNLinks[0]), '_blank');
+                    window.open('/api/link?link=' + encodeURIComponent(lastCDNLinks[0]), '_blank');
                 } else {
                     // 多个文件，使用新的多链接接口
                     const linksParam = lastCDNLinks.map(link => encodeURIComponent(link)).join(',');
-                    window.open('/link?links=' + linksParam, '_blank');
+                    window.open('/api/link?links=' + linksParam, '_blank');
                 }
             }
         });

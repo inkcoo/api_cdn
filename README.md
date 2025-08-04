@@ -21,6 +21,16 @@
    - 发布目录: `.`
 5. 点击部署
 
+## 解决405错误
+
+如果遇到"服务器返回非JSON数据，HTTP状态码：405"错误，请检查以下几点：
+
+1. 确保您的Pages项目正确配置了Functions目录
+2. 确保`functions/upload.js`和`functions/link.js`文件存在
+3. 确保`wrangler.toml`文件包含正确的Functions配置
+4. 检查前端代码中的API路径是否正确指向Cloudflare Pages Functions路由（例如将 `/link` 修改为 `/api/link`）
+5. 重新部署项目以确保所有更改生效
+
 ## 本地开发
 
 ```bash
@@ -51,7 +61,7 @@ POST /upload
 ### 纯文本链接
 
 ```
-GET /upload?link=https://example.com/file.png
+GET /link?link=https://example.com/file.png
 
 响应:
 https://cdn.example.com/file.png
