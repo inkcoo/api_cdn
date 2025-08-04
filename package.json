@@ -1,22 +1,19 @@
 {
-  "name": "cfcdn",
+  "name": "pgaotcdn_cf_pages",
   "version": "1.0.0",
   "description": "A file upload service for Cloudflare Pages",
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
-    "build": "npm run build:pages",
-    "build:pages": "node build.js",
-    "build:workers": "echo 'No build step required for Cloudflare Workers'",
-    "deploy": "wrangler deploy",
-    "deploy:pages": "npm run build && echo 'Build completed. Deploy to Pages manually.'"
+    "build": "echo 'No build step required for Cloudflare Pages'",
+    "deploy-workers": "wrangler deploy",
+    "deploy-pages": "echo 'Deploy to Cloudflare Pages using dashboard or GitHub integration'"
   },
   "dependencies": {
     "hono": "^3.12.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",
-    "wrangler": "^4.27.0",
-    "fs-extra": "^11.1.1"
+    "wrangler": "^4.27.0"
   }
 }
