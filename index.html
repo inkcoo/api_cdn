@@ -10,7 +10,7 @@
 
 <body>
     <div class="container">
-        <h1>点鸭社区CDN上传</h1>
+        <h1>点鸭社区CDN上传1.1</h1>
 
         <div class="upload-area" id="dropZone">
             <p>拖拽文件到此处或点击选择文件</p>
@@ -137,14 +137,14 @@
             progressDiv.textContent = '🔄 正在前端直传...';
 
             try {
-                const response = await fetch('/api/upload', {
+                const response = await fetch('/upload', {
                     method: 'POST',
                     body: formData
                 });
 
                 // 检查响应状态码
                 if (response.status === 405) {
-                    showMessage(`❌ 上传出错: HTTP ${response.status} (方法不允许)<br>请检查API路径配置，确保使用正确的端点。<br>当前路径: /api/upload`, 'error');
+                    showMessage(`❌ 上传出错: HTTP ${response.status} (方法不允许)<br>请检查API路径配置，确保使用正确的端点。<br>当前路径: /upload`, 'error');
                     return;
                 }
 
@@ -224,11 +224,11 @@
             if (lastCDNLinks.length > 0) {
                 if (lastCDNLinks.length === 1) {
                     // 单个文件，直接打开
-                    window.open('/api/link?link=' + encodeURIComponent(lastCDNLinks[0]), '_blank');
+                    window.open('/link?link=' + encodeURIComponent(lastCDNLinks[0]), '_blank');
                 } else {
                     // 多个文件，使用新的多链接接口
                     const linksParam = lastCDNLinks.map(link => encodeURIComponent(link)).join(',');
-                    window.open('/api/link?links=' + linksParam, '_blank');
+                    window.open('/link?links=' + linksParam, '_blank');
                 }
             }
         });
