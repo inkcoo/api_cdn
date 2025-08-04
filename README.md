@@ -23,12 +23,12 @@
 
 ## 解决405错误
 
-如果遇到"服务器返回非JSON数据，HTTP状态码：405"错误，请检查以下几点：
+如果遇到405错误，请按以下步骤排查：
 
-1. 确保您的Pages项目正确配置了Functions目录
+1. 检查`functions`目录是否正确配置
 2. 确保`functions/upload.js`和`functions/link.js`文件存在
-3. 确保`wrangler.toml`文件包含正确的Functions配置
-4. 检查前端代码中的API路径是否正确指向Cloudflare Pages Functions路由（例如将 `/link` 修改为 `/api/link`）
+3. 验证`wrangler.toml`中的配置是否正确
+4. 检查前端代码中的API路径是否正确指向Cloudflare Pages Functions路由（在Pages中应使用`/api/upload`而不是`/upload`）
 5. 重新部署项目以确保所有更改生效
 
 ## 本地开发
